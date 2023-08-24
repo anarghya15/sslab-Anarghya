@@ -1,0 +1,8 @@
+This is written by the original file descriptor
+This is written by the duplicate file descriptor
+Using dup2
+This is written by the original file descriptor
+This is written by the duplicate file descriptor
+Using fcntl
+This is written by the original file descriptor
+This is written by the duplicate file descriptor

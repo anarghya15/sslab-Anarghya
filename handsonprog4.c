@@ -3,7 +3,7 @@
 #include<stdio.h>
 
 int main(){
-	int fd = open("/home/dell/newfileprog3.txt", O_RDWR|O_EXCL, 0);
+	int fd = open("/home/dell/newfileprog3.txt", O_RDONLY|O_EXCL);
 	if(fd == -1){
 		printf("open failed as named file exists\n");
 	}
