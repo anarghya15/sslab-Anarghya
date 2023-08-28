@@ -4,7 +4,7 @@
 #include<sys/stat.h>
 
 int main(){
-	int fd = open("prog10.txt", O_RDWR|O_APPEND);
+	int fd = open("prog11.txt", O_RDWR|O_APPEND);
 	int fd2, fd3, fd4;
 	if(fd == -1)
 	{
