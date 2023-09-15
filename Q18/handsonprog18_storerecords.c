@@ -15,7 +15,7 @@ int main(){
 
 	for (i=0;i<3;i++){
 
-		db[i].rollno=1+1; 
+		db[i].rollno=i+1; 
 		db[i].marks=0;
 	}
 	fd = open ("records.txt", O_RDWR|O_CREAT, 0666); 
