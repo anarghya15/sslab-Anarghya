@@ -1,35 +1,46 @@
 /*
 ==============================================================================================================================
-Name : handsonprog24.c
+Name : handsonprog29.c
 Author : H Anarghya
-Description : Write a program to create a message queue and print the key and message queue id.
-Date: 8th Oct, 2023.
+Description : Write a program to remove the message queue.
+Date: 9th Oct, 2023.
 ==============================================================================================================================
 
 ==============================================================================================================================
 Sample output:
-$ ./h24
-The key is = 1627787214
-The key is = 0x61060fce
-The message queue id is = 0
-
-$ ipcs -q
+$ ./h29
+Message queue with id 0 is removed
+$ ipcs
 
 ------ Message Queues --------
 key        msqid      owner      perms      used-bytes   messages    
-0x61060fce 0          dell       744        0            0  
+ 
 ==============================================================================================================================
 */
-#include<stdio.h>
-#include<sys/types.h>
-#include<sys/ipc.h>
-#include<sys/msg.h>
+#include <unistd.h> 
+
+#include <stdio.h>
+
+#include <sys/msg.h>
+
+#include <sys/ipc.h>
+
+#include <sys/types.h>
+
+#include <sys/time.h> 
+
+#include <time.h>
 
 int main(){
 	int key = ftok("/home/dell/greptext.txt", 'a');
-	int qid = msgget(key, IPC_CREAT|0744);
-
-	printf("The key is = %d\n", key);
-	printf("The key is = 0x%0x\n", key);
-	printf("The message queue id is = %d\n", qid);
+	
+	int msqid = msgget(key, 0);
+	
+	int rtrn = msgctl(msqid, IPC_RMID, (struct msqid_ds *) NULL);
+	
+	if(rtrn == 0){
+		printf("Message queue with id %d is removed\n", msqid);
+	}
+	
 }
+	
