@@ -6,7 +6,8 @@ Description : Write a program to simulate online ticket reservation. Implement w
 	      Write a separate program, to open the file, implement write lock, read the ticket number, increment the number and print the new ticket number then close the file.
 Date: 25th Aug, 2023.
 ==================================================================================================================================================================================
-==================================================================================================================================================================================Sample Output:
+==================================================================================================================================================================================
+Sample Output:
 $ ./book_ticket 
 Before entering into critical section..
 Inside the critical section...
