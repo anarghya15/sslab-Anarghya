@@ -15,3 +15,8 @@ struct faculty_details{
     char password[100];
     char department[50];
 };
+
+struct admin_details{
+    char adminId[4];
+    char password[100];
+};

@@ -3,7 +3,7 @@
 1. Admin\n\
 2. Student\n\
 3. Faculty\n\
-Please select your choice: ";
+Please select your choice: "
 
 #define ADMIN_MENU "\n\
 ----------------------------------------------Admin Menu------------------------------------------------\n\
@@ -15,4 +15,5 @@ Please select your choice: ";
 6. Deactivate/Block Student\n\
 7. Modify Student Details\n\
 8. Modify Faculty Details\n\
-9. Logout and Exit";
+9. Logout and Exit\n\
+Please enter your choice: "
