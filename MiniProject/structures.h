@@ -20,3 +20,12 @@ struct admin_details{
     char adminId[4];
     char password[100];
 };
+
+struct course_details{
+    char courseId[5];
+    char name[100];
+    int total_seats;
+    int available_seats;
+    char facultyId[4];
+    bool isActive;
+};

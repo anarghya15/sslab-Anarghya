@@ -40,19 +40,7 @@ int main() {
     }    
 
     printf("Connected to server at %s:%d\n", SERVER_IP, SERVER_PORT);
-    //int client_port = getsockname(client_socket, (struct sockaddr*)&client_addr, &addr_len);
-    //printf("Client Port = %d\n", ntohs(client_addr.sin_port));
     
-    // Send data to the server
-    //printf("Enter a message to send to the server: ");
-    //fgets(message, sizeof(message), stdin);      
-
-    //send(client_socket, message, strlen(message), 0);
-
-    // Receive and display the response from the server
-    //recv(client_socket, response, sizeof(response), 0);
-    //printf("Server Response: %s\n", response);
-
     //Get menu
     noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
     server_response[noOfBytes] = '\0';
@@ -78,8 +66,8 @@ int main() {
                 password[x-1] = '\0';
                 send(client_socket, password, strlen(password), 0);
 
-                recv(client_socket, server_response, sizeof(server_response), 0);
-                write(1, server_response, strlen(server_response));
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0);
+                write(1, server_response, noOfBytes);
                 recv(client_socket, &tries, sizeof(tries), 0);
                 if(tries >=3) break;              
 
@@ -91,7 +79,6 @@ int main() {
     }
     // Close the client socket
     close(client_socket);
-
     return 0;
 }
 
@@ -225,7 +212,7 @@ void handle_admin(int client_socket){
                 write(1, server_response, strlen(server_response)); 
                 noOfBytes = read(0, &id, sizeof(id));
                 id[noOfBytes-1] = '\0';
-                send(client_socket, name, strlen(id), 0);
+                send(client_socket, id, strlen(id), 0);
 
                 noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
                 server_response[noOfBytes] = '\0';
@@ -260,7 +247,7 @@ void handle_admin(int client_socket){
                 write(1, server_response, strlen(server_response)); 
                 noOfBytes = read(0, &id, sizeof(id));
                 id[noOfBytes-1] = '\0';
-                send(client_socket, name, strlen(id), 0);
+                send(client_socket, id, strlen(id), 0);
 
                 noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
                 server_response[noOfBytes] = '\0';
@@ -288,11 +275,23 @@ void handle_admin(int client_socket){
                 write(1, server_response, strlen(server_response)); 
                 break;
             }
+            case 9:{
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response));
+                break;
+            }
+            default:{
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response));
+                break;
+            }
         }
         noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
         server_response[noOfBytes] = '\0';
         write(1, server_response, strlen(server_response)); 
-        noOfBytes = read(0, &ch, sizeof(ch));
-        send(client_socket, &ch, sizeof(ch), 0);
+        noOfBytes = read(0, &ch, 1);
+        send(client_socket, &ch, 1, 0);
     }while(ch != 'N');
 }

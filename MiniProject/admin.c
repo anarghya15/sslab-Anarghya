@@ -36,7 +36,7 @@ bool addStudent(struct student_details *details){
         strcpy(details->studentId, "MT001");
         strcpy(details->password, "password");
         details->isActivated = true;
-        write(fd, details, sizeof(*details));
+        write(fd, details, sizeof(struct student_details));
         close(fd);
         return true;
         
@@ -58,7 +58,7 @@ bool addStudent(struct student_details *details){
         }
         strcpy(details->password, "password");
         details->isActivated = true;
-        write(fd, details, sizeof(*details));
+        write(fd, details, sizeof(struct student_details));
         close(fd);
         return true;
                 
@@ -116,7 +116,7 @@ bool addFaculty(struct faculty_details *details){
             sprintf(details->facultyId, "F%d", no);
         }
         strcpy(details->password, "password");
-        write(fd, details, sizeof(*details));
+        write(fd, details, sizeof(struct student_details));
         close(fd);
         return true;
                 
@@ -175,10 +175,10 @@ bool activateStudent(char student_id[]){
 
     lock.l_type = F_WRLCK;
     lock.l_whence = SEEK_SET;
-    lock.l_start = (roll_no-1)*sizeof(cur_student);
+    lock.l_start = (roll_no-1)*sizeof(struct student_details);
     fcntl(fd, F_SETLKW, lock);
-    lseek(fd, (roll_no-1)*sizeof(cur_student), SEEK_SET);
-    read(fd, &cur_student, sizeof(cur_student));
+    lseek(fd, (roll_no-1)*sizeof(struct student_details), SEEK_SET);
+    read(fd, &cur_student, sizeof(struct student_details));
     
     if(cur_student.isActivated == true){
         lock.l_type = F_UNLCK;
@@ -188,8 +188,8 @@ bool activateStudent(char student_id[]){
     }
     cur_student.isActivated = true;
     
-    lseek(fd, -1*sizeof(cur_student), SEEK_CUR);
-    write(fd, &cur_student, sizeof(cur_student));
+    lseek(fd, -1*sizeof(struct student_details), SEEK_CUR);
+    write(fd, &cur_student, sizeof(struct student_details));
     
     lock.l_type = F_UNLCK;
     fcntl(fd, F_SETLK, lock);
@@ -227,10 +227,10 @@ bool deactivateStudent(char student_id[]){
 
     lock.l_type = F_WRLCK;
     lock.l_whence = SEEK_SET;
-    lock.l_start = (roll_no-1)*sizeof(cur_student);
+    lock.l_start = (roll_no-1)*sizeof(struct student_details);
     fcntl(fd, F_SETLKW, lock);
-    lseek(fd, (roll_no-1)*sizeof(cur_student), SEEK_SET);
-    read(fd, &cur_student, sizeof(cur_student));
+    lseek(fd, (roll_no-1)*sizeof(struct student_details), SEEK_SET);
+    read(fd, &cur_student, sizeof(struct student_details));
     
     if(cur_student.isActivated == false){
         lock.l_type = F_UNLCK;
@@ -240,8 +240,8 @@ bool deactivateStudent(char student_id[]){
     }
     cur_student.isActivated = false;
     
-    lseek(fd, -1*sizeof(cur_student), SEEK_CUR);
-    write(fd, &cur_student, sizeof(cur_student));
+    lseek(fd, -1*sizeof(struct student_details), SEEK_CUR);
+    write(fd, &cur_student, sizeof(struct student_details));
     
     lock.l_type = F_UNLCK;
     fcntl(fd, F_SETLK, lock);
@@ -251,9 +251,9 @@ bool deactivateStudent(char student_id[]){
 
 bool modifyStudentDetails(char student_id[], char name[], int age, char email[]){
     int i, roll_no, cur_roll_no;
-    struct student_details cur_student;
+    struct student_details cur_student, new_student_details;
     struct flock lock;
-    int fd = open("/home/dell/sslab/MiniProject/student.txt", O_RDWR|O_APPEND);
+    int fd = open("/home/dell/sslab/MiniProject/student.txt", O_RDWR);
     if(fd == -1){
         perror("open failed");
     }
@@ -277,17 +277,19 @@ bool modifyStudentDetails(char student_id[], char name[], int age, char email[])
 
     lock.l_type = F_WRLCK;
     lock.l_whence = SEEK_SET;
-    lock.l_start = (roll_no-1)*sizeof(cur_student);
+    lock.l_start = (roll_no-1)*sizeof(struct student_details);
     fcntl(fd, F_SETLKW, lock);
-    lseek(fd, (roll_no-1)*sizeof(cur_student), SEEK_SET);
-    read(fd, &cur_student, sizeof(cur_student));
-
-    strcpy(cur_student.name, name);
-    cur_student.age = age;
-    strcpy(cur_student.email, email);
+    lseek(fd, (roll_no-1)*sizeof(struct student_details), SEEK_SET);
+    read(fd, &cur_student, sizeof(struct student_details));
+    strcpy(new_student_details.studentId, student_id);
+    strcpy(new_student_details.name, name);
+    new_student_details.age = age;
+    strcpy(new_student_details.email, email);
+    strcpy(new_student_details.password, cur_student.password);
+    new_student_details.isActivated = cur_student.isActivated;
     
-    lseek(fd, -1*sizeof(cur_student), SEEK_CUR);
-    write(fd, &cur_student, sizeof(cur_student));
+    lseek(fd, -1*sizeof(struct student_details), SEEK_CUR);
+    write(fd, &new_student_details, sizeof(struct student_details));
     lock.l_type = F_UNLCK;
     fcntl(fd, F_SETLK, lock);
     close(fd);
@@ -296,13 +298,13 @@ bool modifyStudentDetails(char student_id[], char name[], int age, char email[])
 
 bool modifyFacultyDetails(char id[], char name[], char email[], char dept[]){
     int i, no, cur_no;
-    struct faculty_details cur_faculty;
+    struct faculty_details cur_faculty, new_faculty_details;
     struct flock lock;
-    int fd = open("/home/dell/sslab/MiniProject/faculty.txt", O_RDWR|O_APPEND);
+    int fd = open("/home/dell/sslab/MiniProject/faculty.txt", O_RDWR);
     if(fd == -1){
         perror("open failed");
     }
-    sscanf(id, "F%d", &no);
+    sscanf(id, "MT%d", &no);
 
     lock.l_type = F_RDLCK;
     lock.l_whence = SEEK_END;
@@ -312,7 +314,7 @@ bool modifyFacultyDetails(char id[], char name[], char email[], char dept[]){
     fcntl(fd, F_SETLKW, lock);
     lseek(fd, -1*sizeof(struct faculty_details), SEEK_END);
     read(fd, &cur_faculty, sizeof(struct faculty_details));
-    sscanf(cur_faculty.facultyId, "F%d", &cur_no);
+    sscanf(cur_faculty.facultyId, "MT%d", &cur_no);
     lock.l_type = F_UNLCK;
     fcntl(fd, F_SETLK, lock);
 
@@ -322,39 +324,53 @@ bool modifyFacultyDetails(char id[], char name[], char email[], char dept[]){
 
     lock.l_type = F_WRLCK;
     lock.l_whence = SEEK_SET;
-    lock.l_start = (no-1)*sizeof(cur_faculty);
+    lock.l_start = (no-1)*sizeof(struct faculty_details);
     fcntl(fd, F_SETLKW, lock);
     lseek(fd, (no-1)*sizeof(struct faculty_details), SEEK_SET);
     read(fd, &cur_faculty, sizeof(struct faculty_details));
-
-    strcpy(cur_faculty.name, name);
-    strcpy(cur_faculty.email, email);
-    strcpy(cur_faculty.department, dept);
+    strcpy(new_faculty_details.facultyId, id);
+    strcpy(new_faculty_details.name, name);
+    strcpy(new_faculty_details.email, email);
+    strcpy(new_faculty_details.department, dept);
+    strcpy(new_faculty_details.password, cur_faculty.password);
     
-    lseek(fd, -1*sizeof(cur_faculty), SEEK_CUR);
-    write(fd, &cur_faculty, sizeof(cur_faculty));
+    lseek(fd, -1*sizeof(struct faculty_details), SEEK_CUR);
+    write(fd, &new_faculty_details, sizeof(struct faculty_details));
     lock.l_type = F_UNLCK;
     fcntl(fd, F_SETLK, lock);
-
     close(fd);
     return true;
 }
 
 /*int main(){
-    char *id;
+    char *id, client_data[1000], buffer[500];
     //struct admin_details ad = {"A01", "password"};
     struct student_details sd = {"", "Anarghya", 24, "h.anarghya@iiitb.ac.in", ""};
     //struct faculty_details fd = {"", "Faculty2", "f2@iiitb.ac.in", "", "CSE"};
     struct student_details sd1 = {"MT001"};
     //struct faculty_details sd = {"F02"};
-    //addStudent(&sd);
+    addStudent(&sd);
     //addFaculty(&fd);
     
     //viewFaculty(&sd);
     //printf("New faculty id is : %s\n", fd.facultyId);
     //printf("New student id is : %s\n", sd.studentId);
-    activateStudent("MT001");
+    //activateStudent("MT001");
     viewStudent(&sd1);
+    //modifyStudentDetails("MT001", "Anu", 23, "anu@gmail.com");
+    //viewStudent(&sd1);
+    strcpy(client_data, "The student details are as follows: \n");
+    sprintf(buffer, "Student ID: %s\n", sd1.studentId);
+    strcat(client_data, buffer);
+    sprintf(buffer, "Student Name: %s\n", sd1.name);
+    strcat(client_data, buffer);
+    sprintf(buffer, "Student Age: %d\n", sd1.age);
+    strcat(client_data, buffer);
+    sprintf(buffer, "Student email: %s\n", sd1.email);
+    strcat(client_data, buffer);
+    sprintf(buffer, "Student is active: %s\n", sd1.isActivated? "True":"False");
+    strcat(client_data, buffer);
+    printf("%s\n", client_data);
 }*/
 
 
