@@ -10,7 +10,7 @@
 #include "faculty.h"
 #include "student.h"
 
-#define PORT 8080
+#define PORT 8081
 #define MAX_CONNECTIONS 5
 
 void *handle_client(void *client_socket);
@@ -86,6 +86,7 @@ void handle_admin_ops(int client_socket) {
         case 1:{
             strcpy(client_data, "Enter student name: ");
             send(client_socket, &client_data, strlen(client_data), 0);
+            
             recv(client_socket, &student.name, sizeof(student.name), 0);
             
             strcpy(client_data, "Enter student age: ");
@@ -304,8 +305,9 @@ void handle_admin_ops(int client_socket) {
 
 void handle_faculty_ops(int client_socket, char faculty_id[]) {
     char buffer[1024], id[6], client_data[2048], ch, pwd[100], confirm_pwd[100];
-    int bytes_received;
+    int bytes_received, count;
     struct course_details course, *cDetails;
+    cDetails = (struct course_details *)malloc(sizeof(struct course_details));
     struct faculty_details faculty;
     int choice;
     
@@ -336,15 +338,22 @@ void handle_faculty_ops(int client_socket, char faculty_id[]) {
             break;
         }
         case 2:{
-            bool opResult = viewActiveCourses(faculty_id, cDetails);
+            bool opResult = viewActiveCourses(faculty_id, cDetails, &count);
             if(opResult){
-                strcpy(client_data, "\nThe course details are as follows:\n");
-                while(cDetails != NULL){
-                    strcat(client_data, "---------------------------------------------------------------------\n");
-                    sprintf(buffer, "Course ID: %s\nCourse Name: %s\nTotal Seats:%d \nAvailable seats: %d\n", cDetails->courseId, cDetails->name, cDetails->total_seats, cDetails->available_seats);
-                    strcat(client_data, buffer);
-                    cDetails++;
+                if(count>0){
+                    int i = 0;
+                    strcpy(client_data, "\nThe course details are as follows:\n");
+                    while(i<count){
+                        strcat(client_data, "---------------------------------------------------------------------\n");
+                        sprintf(buffer, "Course ID: %s\nCourse Name: %s\nTotal Seats:%d \nAvailable seats: %d\n", cDetails[i].courseId, cDetails[i].name, cDetails[i].total_seats, cDetails[i].available_seats);
+                        strcat(client_data, buffer);
+                        i++;
+                    }
                 }
+                else{
+                    strcpy(client_data, "No courses to display!\n");
+                }
+                
                 
             }
             else{
@@ -354,15 +363,22 @@ void handle_faculty_ops(int client_socket, char faculty_id[]) {
             break;
         }
         case 3:{
-            bool opResult = viewRemovedCourses(faculty_id, cDetails);
+            bool opResult = viewRemovedCourses(faculty_id, cDetails, &count);
             if(opResult){
-                strcpy(client_data, "\nThe course details are as follows:\n");
-                while(&course != NULL){
-                    strcat(client_data, "---------------------------------------------------------------------\n");
-                    sprintf(buffer, "Course ID: %s\nCourse Name: %s\nTotal Seats:%d \nAvailable seats: %d\n", cDetails->courseId, cDetails->name, cDetails->total_seats, cDetails->available_seats);
-                    strcat(client_data, buffer);
-                    cDetails++;
+                if(count>0){
+                    int i=0;
+                    strcpy(client_data, "\nThe course details are as follows:\n");
+                    while(i<count){
+                        strcat(client_data, "---------------------------------------------------------------------\n");
+                        sprintf(buffer, "Course ID: %s\nCourse Name: %s\nTotal Seats:%d \nAvailable seats: %d\n", cDetails[i].courseId, cDetails[i].name, cDetails[i].total_seats, cDetails[i].available_seats);
+                        strcat(client_data, buffer);
+                        i++;
+                    }
                 }
+                else{
+                    strcpy(client_data, "No courses to display!\n");
+                }
+                
                 
             }
             else{
@@ -481,10 +497,11 @@ void handle_faculty_ops(int client_socket, char faculty_id[]) {
 
 void handle_student_ops(int client_socket, char student_id[]) {
     char buffer[1024], id[6], client_data[2048], ch, pwd[100], confirm_pwd[100], **faculty_names;
-    int bytes_received;
     struct course_details course, *cDetails;
+    cDetails = (struct course_details*)malloc(sizeof(struct course_details));
     struct faculty_details faculty;
-    int choice;
+    int choice, count, bytes_received;
+    faculty_names = (char**)malloc(100*sizeof(char));
     
     do{
     strcpy(client_data, STUDENT_MENU);
@@ -492,16 +509,29 @@ void handle_student_ops(int client_socket, char student_id[]) {
     recv(client_socket, &choice, sizeof(choice), 0);
     switch(choice){
         case 1:{
-            bool opResult = viewCourses(cDetails, faculty_names);
+            bool isActive = isStudentActive(student_id);
+            if(!isActive){
+                strcpy(client_data, "You are not authorized to perform thie operation since you are not active\n");
+                send(client_socket, client_data, sizeof(client_data), 0);
+                break;
+            }
+            bool opResult = viewCourses(cDetails, faculty_names, &count);
             if(opResult){
-                strcpy(client_data, "\nThe courses are as follows:\n");
-                int i=0;
-                while(cDetails != NULL){
-                    strcat(client_data, "---------------------------------------------------------------------\n");
-                    sprintf(buffer, "Course ID: %s\nCourse Name: %s\nFaculty In charge: %s\nAvailable seats: %d\n", cDetails->courseId, cDetails->name, faculty_names[i], cDetails->available_seats);
-                    strcat(client_data, buffer);
-                    cDetails++;
+                if(count>0){
+                    int i=0;
+                    strcpy(client_data, "\nThe course details are as follows:\n");
+                    while(i<count){
+                        strcat(client_data, "---------------------------------------------------------------------\n");
+                        sprintf(buffer, "Course ID: %s\nCourse Name: %s\nFaculty In Charge:%s \nAvailable seats: %d\n", cDetails[i].courseId, cDetails[i].name, faculty_names[i], cDetails[i].available_seats);
+                        printf("Course ID: %s\nCourse Name: %s\nFaculty In Charge:%s \nAvailable seats: %d\n", cDetails[i].courseId, cDetails[i].name, faculty_names[i], cDetails[i].available_seats);
+                        
+                        strcat(client_data, buffer);
+                        i++;
+                    }
                 }
+                else{
+                    strcpy(client_data, "No courses to display!\n");
+                }               
                 
             }
             else{
@@ -511,34 +541,53 @@ void handle_student_ops(int client_socket, char student_id[]) {
             break;
         }
         case 2:{
-            bool opResult = viewCourses(cDetails, faculty_names);
+            bool isActive = isStudentActive(student_id);
+            if(!isActive){
+                strcpy(client_data, "You are not authorized to perform thie operation since you are not active\n");
+                send(client_socket, client_data, sizeof(client_data), 0);
+                break;
+            }
+            bool opResult = viewCourses(cDetails, faculty_names, &count);
             if(opResult){
-                strcpy(client_data, "\nThe courses are as follows:\n");
-                int i=0;
-                while(cDetails != NULL){
-                    strcat(client_data, "---------------------------------------------------------------------\n");
-                    sprintf(buffer, "Course ID: %s\nCourse Name: %s\nFaculty In charge: %s\nAvailable seats: %d\n", cDetails->courseId, cDetails->name, faculty_names[i], cDetails->available_seats);
-                    strcat(client_data, buffer);
-                    cDetails++;
+                if(count>0){
+                    strcpy(client_data, "\nThe course details are as follows:\n");
+                    int i = 0;
+                    while(i<count){
+                        strcat(client_data, "---------------------------------------------------------------------\n");
+                        sprintf(buffer, "Course ID: %s\nCourse Name: %s\nFaculty In Charge:%s \nAvailable seats: %d\n", cDetails[i].courseId, cDetails[i].name, faculty_names[i], cDetails[i].available_seats);
+                        strcat(client_data, buffer);
+                        i++;
+                    }
                 }
+                else{
+                    strcpy(client_data, "No courses to display!\n");
+                }               
                 
             }
-            strcat(client_data, "Enter course id: ");
-            send(client_socket, &client_data, strlen(client_data), 0);
-            recv(client_socket, id, sizeof(id), 0);
-            id[4] = '\0';
+            if(count > 0){
+                strcat(client_data, "Enter course id: ");
+                send(client_socket, &client_data, strlen(client_data), 0);
+                recv(client_socket, id, sizeof(id), 0);
+                id[4] = '\0';
 
-            opResult = enrollCourse(id, student_id);
-            if(opResult){
-                strcpy(client_data, "Course enrollment successful!\n");
-            }
-            else{
-                strcpy(client_data, "Failed to enroll for the course, please check the course ID \n");
-            }
-            send(client_socket, client_data, sizeof(client_data), 0);
+                opResult = enrollCourse(id, student_id);
+                if(opResult){
+                    strcpy(client_data, "Course enrollment successful!\n");
+                }
+                else{
+                    strcpy(client_data, "Failed to enroll for the course, please check the course ID \n");
+                }
+                send(client_socket, client_data, sizeof(client_data), 0);
+            }            
             break;
         }
         case 3:{
+            bool isActive = isStudentActive(student_id);
+            if(!isActive){
+                strcpy(client_data, "You are not authorized to perform thie operation since you are not active\n");
+                send(client_socket, client_data, sizeof(client_data), 0);
+                break;
+            }
             strcpy(client_data, "Enter course id: ");
             send(client_socket, &client_data, strlen(client_data), 0);
             recv(client_socket, id, sizeof(id), 0);
@@ -555,15 +604,21 @@ void handle_student_ops(int client_socket, char student_id[]) {
             break;
         }
         case 4:{
-            bool opResult = viewEnrolledCourses(student_id, cDetails);
+            bool isActive = isStudentActive(student_id);
+            if(!isActive){
+                strcpy(client_data, "You are not authorized to perform thie operation since you are not active\n");
+                send(client_socket, client_data, sizeof(client_data), 0);
+                break;
+            }
+            cDetails = (struct course_details*)malloc(sizeof(struct course_details));
+            bool opResult = viewEnrolledCourses(student_id, cDetails, &count);
             if(opResult){
                 strcpy(client_data, "\nThe courses are as follows:\n");
                 int i=0;
-                while(cDetails != NULL){
+                while(i<count){
                     strcat(client_data, "---------------------------------------------------------------------\n");
-                    sprintf(buffer, "Course ID: %s\nCourse Name: %s\n", cDetails->courseId, cDetails->name);
+                    sprintf(buffer, "Course ID: %s\nCourse Name: %s\n", cDetails[i].courseId, cDetails[i].name);
                     strcat(client_data, buffer);
-                    cDetails++;
                     i++;
                 }
                 
@@ -725,7 +780,7 @@ void *handle_client(void *arg){
                 strcpy(client_data, "Enter the password: ");
                 send(client_socket, &client_data, strlen(client_data), 0);
                 recv(client_socket, student.password, sizeof(student.password), 0); 
-                isValidated = validateAdmin(admin);
+                isValidated = validateStudent(student);
                 if(isValidated){
                     strcpy(client_data, "Login successful!! Please wait..\n\n");
                     send(client_socket, &client_data, strlen(client_data), 0);

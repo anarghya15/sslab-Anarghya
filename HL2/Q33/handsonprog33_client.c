@@ -31,7 +31,6 @@ int main() {
     char response[1024];
     socklen_t addr_len = sizeof(client_addr);
 
-    // Create socket
     client_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (client_socket == -1) {
         perror("Error creating socket");
@@ -40,12 +39,10 @@ int main() {
     
      
 
-    // Configure server address
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(SERVER_PORT);
     server_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
 
-    // Connect to the server
     if (connect(client_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
         perror("Error connecting to server");
         exit(EXIT_FAILURE);
@@ -56,17 +53,14 @@ int main() {
     int client_port = getsockname(client_socket, (struct sockaddr*)&client_addr, &addr_len);
     printf("Client Port = %d\n", ntohs(client_addr.sin_port));
     
-    // Send data to the server
     printf("Enter a message to send to the server: ");
     fgets(message, sizeof(message), stdin);
 
     send(client_socket, message, strlen(message), 0);
 
-    // Receive and display the response from the server
     recv(client_socket, response, sizeof(response), 0);
     printf("Server Response: %s\n", response);
 
-    // Close the client socket
     close(client_socket);
 
     return 0;

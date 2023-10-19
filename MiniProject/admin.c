@@ -16,7 +16,8 @@ bool validateAdmin(struct admin_details admin){
         perror("open failed");
     }
     sscanf(admin.adminId, "A%d", &no);
-    printf("Number: %d\n", no);
+    printf("ID: %s\n", admin.adminId);
+    printf("Password: %s\n", admin.password);
     lseek(fd, (no-1)*sizeof(admin), SEEK_SET);
     read(fd, &cur_admin, sizeof(cur_admin));
     close(fd);

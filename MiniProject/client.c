@@ -7,7 +7,7 @@
 #include "structures.h"
 
 #define SERVER_IP "127.0.0.1" // Replace with the server's IP address
-#define SERVER_PORT 8080
+#define SERVER_PORT 8081
 
 void handle_admin(int);
 void handle_faculty(int);
@@ -110,7 +110,7 @@ int main() {
                 server_response[noOfBytes] = '\0';
                 write(1, server_response, strlen(server_response)); 
                 read(0, id, sizeof(id));
-                id[3] = '\0';
+                id[5] = '\0';
                 send(client_socket, id, strlen(id), 0);
 
                 noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 

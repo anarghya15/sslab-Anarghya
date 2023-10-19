@@ -11,12 +11,11 @@
 bool validateStudent(struct student_details student){
     int fd, no;
     struct student_details cur_student;
-    printf("Inside validate student function\n");
     fd = open("/home/dell/sslab/MiniProject/student.txt", O_RDONLY);
     if(fd == -1){
         perror("open failed");
     }
-    sscanf(student.studentId, "F%d", &no);
+    sscanf(student.studentId, "MT%d", &no);
     lseek(fd, (no-1)*sizeof(student), SEEK_SET);
     read(fd, &cur_student, sizeof(cur_student));
     close(fd);
@@ -24,7 +23,7 @@ bool validateStudent(struct student_details student){
     else return false;
 }
 
-bool viewCourses(struct course_details *details, char **faculty_names){
+bool viewCourses(struct course_details *details, char **faculty_names, int *count){
     int fd = open("/home/dell/sslab/MiniProject/course.txt", O_RDONLY);
     if (fd == -1) {
 		perror("open failed\n");
@@ -46,22 +45,23 @@ bool viewCourses(struct course_details *details, char **faculty_names){
         }
     }    
     close(fd);
-    faculty_names = (char**) malloc(num_matches*100);
+    faculty_names = (char**) realloc(faculty_names, num_matches*sizeof(char*));
     fd = open("/home/dell/sslab/MiniProject/faculty.txt", O_RDONLY);
     if (fd == -1) {
 		perror("open failed\n");
 	}
     struct course_details *temp = details;
     int i=0;
-    while(temp != NULL){
+    while(i<num_matches){
         int no;
-        sscanf(temp->facultyId, "C%d", &no);
+        sscanf(temp[i].facultyId, "F%d", &no);
         lseek(fd, (no-1)*sizeof(struct faculty_details), SEEK_SET);
         read(fd, &faculty, sizeof(struct faculty_details));
+        faculty_names[i] = (char *)malloc(100 * sizeof(char));
         strcpy(faculty_names[i], faculty.name);
         i++;
-        temp++;
     }
+    *count = num_matches;
     return true;
 }
 
@@ -89,7 +89,7 @@ bool enrollCourse(char courseId[], char studentId[]){
 
     sprintf(filepath, "/home/dell/sslab/MiniProject/courses/%s.txt", courseId);
     fd2 = open(filepath, O_RDWR);
-    if (fd == -1) {
+    if (fd2 == -1) {
 		perror("open failed\n");
 	}
 
@@ -101,7 +101,9 @@ bool enrollCourse(char courseId[], char studentId[]){
     lock.l_pid = getpid();
     fcntl(fd2, F_SETLKW, lock);
 
+    lseek(fd2, (s_no-1)*sizeof(struct enrolment_details), SEEK_SET);
     struct enrolment_details enrol;
+    enrol.id = s_no;
     enrol.isEnrolled = true;
     time_t currentTimestamp;
     time(&currentTimestamp);
@@ -173,9 +175,10 @@ bool dropCourse(char courseId[], char studentId[]){
     return true;
 }
 
-bool viewEnrolledCourses(char sid[], struct course_details *enrolled_courses){
-    int fd, no;
+bool viewEnrolledCourses(char sid[], struct course_details *enrolled_courses, int *count){
+    int fd, no, num_matches1;
     struct course_details *courses, course;
+    courses = (struct course_details*)malloc(sizeof(struct course_details));
     struct flock lock;
     struct enrolment_details enrolled;
     char filepath[100];
@@ -210,7 +213,8 @@ bool viewEnrolledCourses(char sid[], struct course_details *enrolled_courses){
     close(fd);
 
     sscanf(sid, "MT%d", &no);
-    while(courses != NULL){
+    int i=0;
+    while(i<num_matches){
         sprintf(filepath, "/home/dell/sslab/MiniProject/courses/%s.txt", courses->courseId);
         fd = open(filepath, O_RDONLY, 0666);
         lock.l_type = F_RDLCK;
@@ -221,28 +225,27 @@ bool viewEnrolledCourses(char sid[], struct course_details *enrolled_courses){
         fcntl(fd, F_SETLKW, lock);
 
         lseek(fd, (no-1)*sizeof(struct enrolment_details), SEEK_SET);
-        read(fd, &enrolled, sizeof(struct enrolment_details));
-        num_matches = 0;
+        int b = read(fd, &enrolled, sizeof(struct enrolment_details));
+        num_matches1 = 0;
         if (enrolled.isEnrolled == true)
         {
-            enrolled_courses = realloc(enrolled_courses, (num_matches + 1) * sizeof(struct course_details));
+            enrolled_courses = realloc(enrolled_courses, (num_matches1 + 1) * sizeof(struct course_details));
             if (enrolled_courses == NULL) {
                 perror("Memory allocation error");
                 close(fd);
                 free(enrolled_courses);
                 return false;
             }
-            enrolled_courses[num_matches] = course;
-            num_matches++;
+            enrolled_courses[num_matches1] = course;
+            num_matches1++;
         }
         lock.l_type = F_UNLCK;
         fcntl(fd, F_SETLK, lock);
         close(fd); 
-        courses++;
+        i++;
     }
+    *count = num_matches1;
     return true;
-
-
 }
 
 bool changePasswordStudent(char sid[], char newpwd[]){

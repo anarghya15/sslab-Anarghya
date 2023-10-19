@@ -20,7 +20,6 @@ int compare_time_desc(const void *a, const void *b) {
 bool validateFaculty(struct faculty_details faculty){
     int fd, no;
     struct faculty_details cur_faculty;
-    printf("Inside validate faculty function\n");
     fd = open("/home/dell/sslab/MiniProject/faculty.txt", O_RDONLY);
     if(fd == -1){
         perror("open failed");
@@ -50,7 +49,7 @@ bool addCourse(char fid[], struct course_details *details){
     lock.l_len = 0;
     lock.l_pid = getpid();
     fcntl(fd, F_SETLKW, lock);
-    int cur_pos = lseek(fd, -1*sizeof(struct student_details), SEEK_END);
+    int cur_pos = lseek(fd, -1*sizeof(struct course_details), SEEK_END);
     if(cur_pos == -1){
         strcpy(details->courseId, "C001");
         strcpy(details->facultyId, fid);
@@ -60,9 +59,9 @@ bool addCourse(char fid[], struct course_details *details){
         close(fd);
         sprintf(filepath, "/home/dell/sslab/MiniProject/courses/%s.txt", details->courseId);
         fd = open(filepath, O_RDWR|O_CREAT, 0666);
-        fd2 = open("/home/dell/sslab/MiniProject/faculty.txt", O_RDONLY);
+        fd2 = open("/home/dell/sslab/MiniProject/student.txt", O_RDONLY);
         int no;
-        int cur_pos = lseek(fd, -1*sizeof(struct student_details), SEEK_END);
+        int cur_pos = lseek(fd2, -1*sizeof(struct student_details), SEEK_END);
         read(fd2, &s, sizeof(struct student_details));
         if(cur_pos != -1){
             sscanf(s.studentId, "MT%d", &no);
@@ -94,7 +93,7 @@ bool addCourse(char fid[], struct course_details *details){
         strcpy(details->facultyId, fid);
         details->available_seats = details->total_seats;
         details->isActive = true;
-        write(fd, details, sizeof(struct student_details));
+        write(fd, details, sizeof(struct course_details));
         
         lock.l_type = F_UNLCK;
         fcntl(fd, F_SETLK, lock);
@@ -119,7 +118,7 @@ bool addCourse(char fid[], struct course_details *details){
 
 }
 
-bool viewActiveCourses(char fid[], struct course_details *details){
+bool viewActiveCourses(char fid[], struct course_details *details, int *count){
     int fd = open("/home/dell/sslab/MiniProject/course.txt", O_RDONLY);
     if (fd == -1) {
 		perror("open failed\n");
@@ -138,12 +137,13 @@ bool viewActiveCourses(char fid[], struct course_details *details){
             details[num_matches] = course;
             num_matches++;
         }
-    }    
+    } 
+    *count = num_matches;   
     close(fd);
     return true;
 }
 
-bool viewRemovedCourses(char fid[], struct course_details *details){
+bool viewRemovedCourses(char fid[], struct course_details *details, int *count){
     int fd = open("/home/dell/sslab/MiniProject/course.txt", O_RDONLY);
     if (fd == -1) {
 		perror("open failed\n");
@@ -164,6 +164,7 @@ bool viewRemovedCourses(char fid[], struct course_details *details){
         }
     }    
     close(fd);
+    *count = num_matches;   
     return true;
 }
 
@@ -261,7 +262,7 @@ bool modifyCourse(char cid[], char name[], int seats, char fid[]){
     int i, c_no, cur_no;
     struct course_details course, new_course_details;
     struct flock lock;
-    int fd = open("/home/dell/sslab/MiniProject/student.txt", O_RDWR);
+    int fd = open("/home/dell/sslab/MiniProject/course.txt", O_RDWR);
     if(fd == -1){
         perror("open failed");
     }
@@ -289,6 +290,7 @@ bool modifyCourse(char cid[], char name[], int seats, char fid[]){
     fcntl(fd, F_SETLKW, lock);
     lseek(fd, (c_no-1)*sizeof(struct course_details), SEEK_SET);
     read(fd, &course, sizeof(struct course_details));
+    
     strcpy(new_course_details.courseId, cid);
     strcpy(new_course_details.name, name);
     new_course_details.total_seats = seats;
@@ -351,6 +353,7 @@ void removeEnrolments(char cid[], int count){
     char filepath[100];
     struct flock lock;
     struct enrolment_details *records, record;
+    records = (struct enrolment_details *)malloc(sizeof(struct enrolment_details));
     size_t num_records = 0;
     sprintf(filepath, "/home/dell/sslab/MiniProject/course/%s.txt", cid);
     fd = open(filepath, O_RDWR);
@@ -393,3 +396,8 @@ void removeEnrolments(char cid[], int count){
 
 
 }
+
+// int main(){
+//     struct course_details d = {"", "Course 2", 100};
+//     addCourse("F01", &d);
+// }

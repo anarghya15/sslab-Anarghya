@@ -37,20 +37,17 @@ int main() {
     key_t key;
     int semid;
 
-    // Generate the same key used when creating the semaphore set
     if ((key = ftok("../Q31", 'b')) == -1) {
         perror("ftok");
         exit(EXIT_FAILURE);
     }
 
-    // Get the semaphore set ID
-    semid = semget(key, 0, 0);
+   semid = semget(key, 0, 0);
     if (semid == -1) {
         perror("semget");
         exit(EXIT_FAILURE);
     }
 
-    // Remove the semaphore set
     if (semctl(semid, 0, IPC_RMID) == -1) {
         perror("semctl IPC_RMID");
         exit(EXIT_FAILURE);
