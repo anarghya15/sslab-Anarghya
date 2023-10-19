@@ -29,3 +29,9 @@ struct course_details{
     char facultyId[4];
     bool isActive;
 };
+
+struct enrolment_details{
+    int id;
+    bool isEnrolled;
+    time_t enrolmentTime;
+};

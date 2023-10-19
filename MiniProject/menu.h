@@ -1,8 +1,8 @@
 #define WELCOME_MENU "\n\
 -----------------------------------------------Welcome to the Acedemia Portal!!----------------------------------------\n\
 1. Admin\n\
-2. Student\n\
-3. Faculty\n\
+2. Faculty\n\
+3. Student\n\
 Please select your choice: "
 
 #define ADMIN_MENU "\n\
@@ -28,4 +28,14 @@ Please enter your choice: "
 6. Update Course details\n\
 7. Change Password\n\
 8. Logout and Exit\n\
+Please enter your choice: "
+
+#define STUDENT_MENU "\n\
+------------------------------------------------------Student Menu-----------------------------------------------------\n\
+1. View Courses\n\
+2. Enroll for a course\n\
+3. Drop a course\n\
+4. View enrolled courses\n\
+5. Change Password\n\
+6. Logout and Exit\n\
 Please enter your choice: "

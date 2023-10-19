@@ -10,6 +10,8 @@
 #define SERVER_PORT 8080
 
 void handle_admin(int);
+void handle_faculty(int);
+void handle_student(int);
 
 int main() {
     int client_socket, choice, noOfTries = 0, noOfBytes;
@@ -73,6 +75,58 @@ int main() {
 
             }
             if(tries == 4) handle_admin(client_socket);
+            break;              
+        }
+        case 2: {
+            while (1)
+            {
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                read(0, id, sizeof(id));
+                id[3] = '\0';
+                send(client_socket, id, strlen(id), 0);
+
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                int x = read(0, password, sizeof(password));
+                password[x-1] = '\0';
+                send(client_socket, password, strlen(password), 0);
+
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0);
+                write(1, server_response, noOfBytes);
+                recv(client_socket, &tries, sizeof(tries), 0);
+                if(tries >=3) break;              
+
+            }
+            if(tries == 4) handle_faculty(client_socket);
+            break;              
+        }
+        case 3: {
+            while (1)
+            {
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                read(0, id, sizeof(id));
+                id[3] = '\0';
+                send(client_socket, id, strlen(id), 0);
+
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                int x = read(0, password, sizeof(password));
+                password[x-1] = '\0';
+                send(client_socket, password, strlen(password), 0);
+
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0);
+                write(1, server_response, noOfBytes);
+                recv(client_socket, &tries, sizeof(tries), 0);
+                if(tries >=3) break;              
+
+            }
+            if(tries == 4) handle_student(client_socket);
             break;              
         }
 
@@ -287,6 +341,258 @@ void handle_admin(int client_socket){
                 write(1, server_response, strlen(server_response));
                 break;
             }
+        }
+        if(choice == 9){
+            ch='N';
+            continue;
+        }
+        noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+        server_response[noOfBytes] = '\0';
+        write(1, server_response, strlen(server_response)); 
+        noOfBytes = read(0, &ch, 1);
+        send(client_socket, &ch, 1, 0);
+    }while(ch != 'N');
+}
+
+void handle_faculty(int client_socket){
+    int noOfBytes, choice, seats;
+    char server_response[1000], data[1000], name[100], ch, id[6];
+
+    do{
+        noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+        server_response[noOfBytes] = '\0';
+        write(1, server_response, strlen(server_response)); 
+        scanf("%d", &choice);
+        send(client_socket, &choice, sizeof(choice), 0);
+        switch(choice){
+            case 1: {  
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                noOfBytes = read(0, &name, sizeof(name));
+                name[noOfBytes-1] = '\0';
+                send(client_socket, name, strlen(name), 0);
+
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                scanf("%d", &seats);
+                send(client_socket, &seats, sizeof(seats), 0);
+
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+
+                break;
+            }
+
+            case 2: {  
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+
+                break;
+            }
+
+            case 3: {
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                break;
+            }
+
+            case 4: {
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                noOfBytes = read(0, &id, sizeof(id));
+                id[noOfBytes-1] = '\0';
+                send(client_socket, id, strlen(id), 0);
+
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                break;
+            }
+
+            case 5: {
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                noOfBytes = read(0, &id, sizeof(id));
+                id[noOfBytes-1] = '\0';
+                send(client_socket, id, strlen(id), 0);
+
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                break;
+            }
+
+            case 6: {
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                noOfBytes = read(0, &id, sizeof(id));
+                id[noOfBytes-1] = '\0';
+                send(client_socket, id, strlen(id), 0);
+
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                noOfBytes = read(0, &name, sizeof(name));
+                name[noOfBytes-1] = '\0';
+                send(client_socket, name, strlen(name), 0);
+
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                scanf("%d", &seats);
+                send(client_socket, &seats, sizeof(seats), 0);
+
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+
+                break;
+            }
+
+            case 7: {
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                noOfBytes = read(0, &data, sizeof(data));
+                id[noOfBytes-1] = '\0';
+                send(client_socket, data, strlen(data), 0);
+
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                noOfBytes = read(0, &data, sizeof(data));
+                name[noOfBytes-1] = '\0';
+                send(client_socket, data, strlen(data), 0);
+
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                break;
+            }
+            case 8:{
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response));
+                break;
+            }
+            default:{
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response));
+                break;
+            }
+        }
+        if(choice == 8){
+            ch='N';
+            continue;
+        }
+        noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+        server_response[noOfBytes] = '\0';
+        write(1, server_response, strlen(server_response)); 
+        noOfBytes = read(0, &ch, 1);
+        send(client_socket, &ch, 1, 0);
+    }while(ch != 'N');
+}
+
+void handle_student(int client_socket){
+    int noOfBytes, choice, seats;
+    char server_response[2048], data[1000], name[100], ch, id[6];
+
+    do{
+        noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+        server_response[noOfBytes] = '\0';
+        write(1, server_response, strlen(server_response)); 
+        scanf("%d", &choice);
+        send(client_socket, &choice, sizeof(choice), 0);
+        switch(choice){
+            case 1: {  
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+
+                break;
+            }
+
+            case 2: {  
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                noOfBytes = read(0, &id, sizeof(id));
+                id[noOfBytes-1] = '\0';
+                send(client_socket, id, strlen(id), 0);
+
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+
+                break;
+            }
+
+            case 3: {
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                noOfBytes = read(0, &id, sizeof(id));
+                id[noOfBytes-1] = '\0';
+                send(client_socket, id, strlen(id), 0);
+
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                break;
+            }
+
+            case 4: {
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                break;
+            }
+
+            case 5: {
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                noOfBytes = read(0, &data, sizeof(data));
+                id[noOfBytes-1] = '\0';
+                send(client_socket, data, strlen(data), 0);
+
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                noOfBytes = read(0, &data, sizeof(data));
+                name[noOfBytes-1] = '\0';
+                send(client_socket, data, strlen(data), 0);
+
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response)); 
+                break;
+            }
+            case 6:{
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response));
+                break;
+            }
+            default:{
+                noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
+                server_response[noOfBytes] = '\0';
+                write(1, server_response, strlen(server_response));
+                break;
+            }
+        }
+        if(choice == 6){
+            ch='N';
+            continue;
         }
         noOfBytes = recv(client_socket, server_response, sizeof(server_response), 0); 
         server_response[noOfBytes] = '\0';

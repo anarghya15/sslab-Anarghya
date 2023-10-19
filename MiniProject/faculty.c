@@ -3,9 +3,19 @@
 #include<unistd.h>
 #include<fcntl.h>
 #include<string.h>
+#include<time.h>
 #include<sys/types.h>
 #include "structures.h"
 #include "faculty.h"
+
+int compare_time_desc(const void *a, const void *b) {
+    struct enrolment_details *recordA = (struct enrolment_details *)a;
+    struct enrolment_details *recordB = (struct enrolment_details *)b;
+
+    if (recordA->enrolmentTime > recordB->enrolmentTime) return -1;
+    if (recordA->enrolmentTime < recordB->enrolmentTime) return 1;
+    return 0;
+}
 
 bool validateFaculty(struct faculty_details faculty){
     int fd, no;
@@ -25,9 +35,12 @@ bool validateFaculty(struct faculty_details faculty){
 
 bool addCourse(char fid[], struct course_details *details){
     struct course_details cur_course;
-    int i;
+    struct student_details s;
+    int i, fd, fd2;
     struct flock lock;
-    int fd = open("/home/dell/sslab/MiniProject/course.txt", O_RDWR|O_APPEND|O_CREAT, 0666);
+    char filepath[100];
+    struct enrolment_details enrol = {false};
+    fd = open("/home/dell/sslab/MiniProject/course.txt", O_RDWR|O_APPEND|O_CREAT, 0666);
     if(fd == -1){
         perror("open failed");
     }
@@ -45,6 +58,21 @@ bool addCourse(char fid[], struct course_details *details){
         details->isActive = true;
         write(fd, details, sizeof(struct course_details));
         close(fd);
+        sprintf(filepath, "/home/dell/sslab/MiniProject/courses/%s.txt", details->courseId);
+        fd = open(filepath, O_RDWR|O_CREAT, 0666);
+        fd2 = open("/home/dell/sslab/MiniProject/faculty.txt", O_RDONLY);
+        int no;
+        int cur_pos = lseek(fd, -1*sizeof(struct student_details), SEEK_END);
+        read(fd2, &s, sizeof(struct student_details));
+        if(cur_pos != -1){
+            sscanf(s.studentId, "MT%d", &no);
+            for(i=0;i<no;i++){
+                enrol.id = i+1;
+                write(fd, &enrol, sizeof(struct enrolment_details));
+            }
+        }        
+        close(fd);
+        close(fd2);
         return true;
         
     }
@@ -71,12 +99,23 @@ bool addCourse(char fid[], struct course_details *details){
         lock.l_type = F_UNLCK;
         fcntl(fd, F_SETLK, lock);
         close(fd);
+
+        sprintf(filepath, "/home/dell/sslab/MiniProject/courses/%s.txt", details->courseId);
+        fd = open(filepath, O_RDWR|O_CREAT, 0666);
+        fd2 = open("/home/dell/sslab/MiniProject/student.txt", O_RDONLY);
+        int cur_pos = lseek(fd, -1*sizeof(struct student_details), SEEK_END);
+        read(fd2, &s, sizeof(struct student_details));
+        if(cur_pos != -1){
+            sscanf(s.studentId, "MT%d", &no);
+            for(i=0;i<no;i++){
+                enrol.id = i+1;
+                write(fd, &enrol, sizeof(struct enrolment_details));
+            }
+        }        
+        close(fd);
+        close(fd2);
         return true;                
     }
-    lock.l_type = F_UNLCK;
-    fcntl(fd, F_SETLK, lock);
-    close(fd);
-    return false;
 
 }
 
@@ -260,7 +299,10 @@ bool modifyCourse(char cid[], char name[], int seats, char fid[]){
     else{
         int diff = course.total_seats - seats;
         new_course_details.available_seats = course.available_seats - diff;
-        if(new_course_details.available_seats < 0) new_course_details.available_seats = 0;
+        if(new_course_details.available_seats < 0) {
+            removeEnrolments(cid, abs(new_course_details.available_seats));
+            new_course_details.available_seats = 0;
+        }
     }
 
     strcpy(new_course_details.facultyId, course.facultyId);
@@ -271,6 +313,8 @@ bool modifyCourse(char cid[], char name[], int seats, char fid[]){
     lock.l_type = F_UNLCK;
     fcntl(fd, F_SETLK, lock);
     close(fd);
+
+    //TODO Remove extra enrolments
     return true;
     
 }
@@ -279,8 +323,7 @@ bool changePassword(char fid[], char newpwd[]){
     int fd, no;
     struct faculty_details cur_faculty;
     struct flock lock;
-    printf("Inside validate faculty function\n");
-    fd = open("/home/dell/sslab/MiniProject/faculty.txt", O_RDONLY);
+    fd = open("/home/dell/sslab/MiniProject/faculty.txt", O_RDWR);
     if(fd == -1){
         perror("open failed");
     }
@@ -288,7 +331,7 @@ bool changePassword(char fid[], char newpwd[]){
 
     lock.l_type = F_WRLCK;
     lock.l_whence = SEEK_SET;
-    lock.l_start = (no-1)*sizeof(struct course_details);
+    lock.l_start = (no-1)*sizeof(struct faculty_details);
     fcntl(fd, F_SETLKW, lock);
     lseek(fd, (no-1)*sizeof(struct faculty_details), SEEK_SET);
     read(fd, &cur_faculty, sizeof(struct faculty_details));
@@ -300,4 +343,53 @@ bool changePassword(char fid[], char newpwd[]){
     fcntl(fd, F_SETLK, lock);
 
     close(fd);
+    return true;
+}
+
+void removeEnrolments(char cid[], int count){
+    int fd, i=0;
+    char filepath[100];
+    struct flock lock;
+    struct enrolment_details *records, record;
+    size_t num_records = 0;
+    sprintf(filepath, "/home/dell/sslab/MiniProject/course/%s.txt", cid);
+    fd = open(filepath, O_RDWR);
+    if(fd == -1){
+        perror("open failed");
+    }
+    lock.l_type = F_WRLCK;
+    lock.l_whence = SEEK_END;
+    lock.l_start = 0;
+    lock.l_len = 0;
+    lock.l_pid = getpid();
+    fcntl(fd, F_SETLKW, lock);
+
+    while(read(fd, &record, sizeof(struct enrolment_details)) > 0){
+        records = realloc(records, (num_records + 1) * sizeof(struct enrolment_details));
+        if (records == NULL) {
+            perror("Memory allocation error");
+            close(fd);
+            free(records);
+            return;
+        }
+        records[num_records] = record;
+        num_records++;
+    }
+
+    qsort(records, num_records, sizeof(struct enrolment_details), compare_time_desc);
+    while(i<count){
+        int no = records[i].id;
+        lseek(fd, (no-1)*sizeof(struct enrolment_details), SEEK_SET);
+        read(fd, &record, sizeof(struct enrolment_details));
+        if(record.isEnrolled == false) continue;
+        record.isEnrolled = false;
+        lseek(fd, (no-1)*sizeof(struct enrolment_details), SEEK_SET);
+        write(fd, &record, sizeof(struct enrolment_details));
+        i++;
+    }
+    lock.l_type = F_UNLCK;
+    fcntl(fd, F_SETLK, lock);
+    close(fd);
+
+
 }

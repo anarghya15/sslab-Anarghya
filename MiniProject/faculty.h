@@ -6,3 +6,4 @@ bool removeCourse(char[], char[]);
 bool activateCourse(char[], char[]);
 bool modifyCourse(char[], char[], int, char[]);
 bool changePassword(char[], char[]);
+void removeEnrolments(char[], int);

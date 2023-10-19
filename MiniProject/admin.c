@@ -24,6 +24,35 @@ bool validateAdmin(struct admin_details admin){
     else return false;
 }
 
+void addStudentRecordToCourses(int id){
+    struct enrolment_details enrol = {id, false};
+    struct course_details course;
+    char filepath[100];
+    int no, i;
+    int fd = open("/home/dell/sslab/MiniProject/course.txt", O_RDWR|O_APPEND|O_CREAT, 0666);
+    if(fd == -1){
+        perror("open failed");
+    }
+    int cur_pos = lseek(fd, -1*sizeof(struct course_details), SEEK_END);
+    if(cur_pos != -1){
+        read(fd, &course, sizeof(struct course_details));
+        close(fd);
+
+        sscanf(course.courseId, "C%d", &no);
+        for(i=1;i<=no;i++){
+            sprintf(filepath, "/home/dell/sslab/MiniProject/courses/C%d.txt", i);
+            int fd = open(filepath, O_RDWR|O_APPEND);
+            if(fd == -1){
+                perror("open failed");
+            }
+            write(fd, &enrol, sizeof(struct enrolment_details));
+            close(fd);
+        }
+    
+    }
+    close(fd);
+}
+
 bool addStudent(struct student_details *details){
     struct student_details cur_student;
     int i;
@@ -37,6 +66,7 @@ bool addStudent(struct student_details *details){
         strcpy(details->password, "password");
         details->isActivated = true;
         write(fd, details, sizeof(struct student_details));
+        addStudentRecordToCourses(1);
         close(fd);
         return true;
         
@@ -60,6 +90,7 @@ bool addStudent(struct student_details *details){
         details->isActivated = true;
         write(fd, details, sizeof(struct student_details));
         close(fd);
+        addStudentRecordToCourses(no);
         return true;
                 
     }

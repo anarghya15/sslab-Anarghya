@@ -8,12 +8,15 @@
 #include "structures.h"
 #include "admin.h"
 #include "faculty.h"
+#include "student.h"
 
 #define PORT 8080
 #define MAX_CONNECTIONS 5
 
 void *handle_client(void *client_socket);
 void handle_admin_ops(int client_socket);
+void handle_faculty_ops(int, char[]);
+void handle_student_ops(int, char[]);
 
 int main() {
     int server_socket, client_socket;
@@ -288,6 +291,10 @@ void handle_admin_ops(int client_socket) {
         }      
             
     } 
+    if(choice == 9){
+        ch='N';
+        continue;
+    }
     strcpy(client_data, "Do you want to perform any other operations?[Y/N]: ") ;
     send(client_socket, &client_data, strlen(client_data), 0);
     recv(client_socket, &ch, 1, 0);
@@ -332,7 +339,7 @@ void handle_faculty_ops(int client_socket, char faculty_id[]) {
             bool opResult = viewActiveCourses(faculty_id, cDetails);
             if(opResult){
                 strcpy(client_data, "\nThe course details are as follows:\n");
-                while(&course != NULL){
+                while(cDetails != NULL){
                     strcat(client_data, "---------------------------------------------------------------------\n");
                     sprintf(buffer, "Course ID: %s\nCourse Name: %s\nTotal Seats:%d \nAvailable seats: %d\n", cDetails->courseId, cDetails->name, cDetails->total_seats, cDetails->available_seats);
                     strcat(client_data, buffer);
@@ -414,7 +421,6 @@ void handle_faculty_ops(int client_socket, char faculty_id[]) {
             if(opResult){
                 //Success
                 strcpy(buffer, "Course modified successfully!!\n");
-                send(client_socket, &buffer, strlen(buffer), 0);
             }
             else{
                 strcpy(buffer, "Failed to modify the course details, either the course ID is invalid or you are not authorized to remove the course.\n");
@@ -438,7 +444,7 @@ void handle_faculty_ops(int client_socket, char faculty_id[]) {
                 strcpy(buffer, "Passwords do not match, please try again!!\n");
             }
             else{
-                bool opResult = modifyFacultyDetails(faculty.facultyId, faculty.name, faculty.email, faculty.department);
+                bool opResult = changePassword(faculty_id, pwd);
                 if(opResult){
                     //Success
                     strcpy(buffer, "Password changes successfully!!\n");
@@ -463,12 +469,161 @@ void handle_faculty_ops(int client_socket, char faculty_id[]) {
         }      
             
     } 
+    if(choice == 8){
+        ch='N';
+        continue;
+    }
     strcpy(client_data, "Do you want to perform any other operations?[Y/N]: ") ;
     send(client_socket, &client_data, strlen(client_data), 0);
     recv(client_socket, &ch, 1, 0);
     }while(ch != 'N');
 }
 
+void handle_student_ops(int client_socket, char student_id[]) {
+    char buffer[1024], id[6], client_data[2048], ch, pwd[100], confirm_pwd[100], **faculty_names;
+    int bytes_received;
+    struct course_details course, *cDetails;
+    struct faculty_details faculty;
+    int choice;
+    
+    do{
+    strcpy(client_data, STUDENT_MENU);
+    send(client_socket, &client_data, strlen(client_data), 0);
+    recv(client_socket, &choice, sizeof(choice), 0);
+    switch(choice){
+        case 1:{
+            bool opResult = viewCourses(cDetails, faculty_names);
+            if(opResult){
+                strcpy(client_data, "\nThe courses are as follows:\n");
+                int i=0;
+                while(cDetails != NULL){
+                    strcat(client_data, "---------------------------------------------------------------------\n");
+                    sprintf(buffer, "Course ID: %s\nCourse Name: %s\nFaculty In charge: %s\nAvailable seats: %d\n", cDetails->courseId, cDetails->name, faculty_names[i], cDetails->available_seats);
+                    strcat(client_data, buffer);
+                    cDetails++;
+                }
+                
+            }
+            else{
+                strcpy(client_data, "Could not get the course details\n");
+            }
+            send(client_socket, client_data, sizeof(client_data), 0);
+            break;
+        }
+        case 2:{
+            bool opResult = viewCourses(cDetails, faculty_names);
+            if(opResult){
+                strcpy(client_data, "\nThe courses are as follows:\n");
+                int i=0;
+                while(cDetails != NULL){
+                    strcat(client_data, "---------------------------------------------------------------------\n");
+                    sprintf(buffer, "Course ID: %s\nCourse Name: %s\nFaculty In charge: %s\nAvailable seats: %d\n", cDetails->courseId, cDetails->name, faculty_names[i], cDetails->available_seats);
+                    strcat(client_data, buffer);
+                    cDetails++;
+                }
+                
+            }
+            strcat(client_data, "Enter course id: ");
+            send(client_socket, &client_data, strlen(client_data), 0);
+            recv(client_socket, id, sizeof(id), 0);
+            id[4] = '\0';
+
+            opResult = enrollCourse(id, student_id);
+            if(opResult){
+                strcpy(client_data, "Course enrollment successful!\n");
+            }
+            else{
+                strcpy(client_data, "Failed to enroll for the course, please check the course ID \n");
+            }
+            send(client_socket, client_data, sizeof(client_data), 0);
+            break;
+        }
+        case 3:{
+            strcpy(client_data, "Enter course id: ");
+            send(client_socket, &client_data, strlen(client_data), 0);
+            recv(client_socket, id, sizeof(id), 0);
+            id[4] = '\0';
+
+            bool opResult = dropCourse(id, student_id);
+            if(opResult){
+                strcpy(client_data, "Course dropped successfully!\n");
+            }
+            else{
+                strcpy(client_data, "Failed to un enroll for the course, please check the course ID.\n");
+            }
+            send(client_socket, client_data, sizeof(client_data), 0);
+            break;
+        }
+        case 4:{
+            bool opResult = viewEnrolledCourses(student_id, cDetails);
+            if(opResult){
+                strcpy(client_data, "\nThe courses are as follows:\n");
+                int i=0;
+                while(cDetails != NULL){
+                    strcat(client_data, "---------------------------------------------------------------------\n");
+                    sprintf(buffer, "Course ID: %s\nCourse Name: %s\n", cDetails->courseId, cDetails->name);
+                    strcat(client_data, buffer);
+                    cDetails++;
+                    i++;
+                }
+                
+            }
+            else{
+                strcpy(client_data, "Could not get the course details\n");
+            }
+            send(client_socket, client_data, sizeof(client_data), 0);
+            break;
+        }        
+        case 5:{
+            strcpy(client_data, "Enter new password: ");
+            send(client_socket, &client_data, strlen(client_data), 0);
+            bytes_received = recv(client_socket, &pwd, sizeof(pwd), 0);
+            pwd[bytes_received] = '\0';
+
+            strcpy(client_data, "Confirm new password: ");
+            send(client_socket, &client_data, strlen(client_data), 0);
+            bytes_received = recv(client_socket, &confirm_pwd, sizeof(confirm_pwd), 0);
+            confirm_pwd[bytes_received] = '\0';
+
+            
+            if(strcmp(pwd, confirm_pwd) != 0){
+                strcpy(buffer, "Passwords do not match, please try again!!\n");
+            }
+            else{
+                bool opResult = changePasswordStudent(student_id, pwd);
+                if(opResult){
+                    //Success
+                    strcpy(buffer, "Password changes successfully!!\n");
+                }
+                else{
+                    strcpy(buffer, "Failed to change the password!\n");
+                }
+                send(client_socket, &buffer, strlen(buffer), 0);
+            }
+            
+            break;
+        }
+        case 6: {
+            strcpy(buffer, "Thank you for using Academia portal!\n");
+            send(client_socket, &buffer, strlen(buffer), 0);
+            break;
+        }
+        default:{
+            strcpy(buffer, "Invalid choice!\n");
+            send(client_socket, &buffer, strlen(buffer), 0);
+            break;
+        }      
+            
+    } 
+    if(choice == 6){
+        ch='N';
+        continue;
+    }
+    strcpy(client_data, "Do you want to perform any other operations?[Y/N]: ") ;
+    send(client_socket, &client_data, strlen(client_data), 0);
+    recv(client_socket, &ch, 1, 0);
+    }while(ch != 'N');
+}
 
 void *handle_client(void *arg){
     int client_socket = *((int *)arg), choice, noOfTries = 0;
@@ -565,14 +720,19 @@ void *handle_client(void *arg){
             while(1){
                 strcpy(client_data, "Enter the login ID: ");
                 send(client_socket, &client_data, strlen(client_data), 0);
-                recv(client_socket, faculty.facultyId, sizeof(faculty.facultyId), 0); 
+                recv(client_socket, student.studentId, sizeof(student.studentId), 0); 
 
                 strcpy(client_data, "Enter the password: ");
                 send(client_socket, &client_data, strlen(client_data), 0);
-                recv(client_socket, faculty.password, sizeof(faculty.password), 0); 
+                recv(client_socket, student.password, sizeof(student.password), 0); 
                 isValidated = validateAdmin(admin);
                 if(isValidated){
-                    handle_admin_ops(client_socket);
+                    strcpy(client_data, "Login successful!! Please wait..\n\n");
+                    send(client_socket, &client_data, strlen(client_data), 0);
+                    noOfTries = 4;
+                    sleep(5);
+                    int bytes = send(client_socket, &noOfTries, sizeof(noOfTries), 0);
+                    handle_student_ops(client_socket, student.studentId);
                 }
                 else{
                     noOfTries++;
@@ -594,8 +754,7 @@ void *handle_client(void *arg){
             strcpy(client_data, "Invalid choice, please try again");
             send(client_socket, &client_data, strlen(client_data), 0);            
         }       
-    }        
-        
+    }       
     close(client_socket);
     pthread_exit(NULL);
 
